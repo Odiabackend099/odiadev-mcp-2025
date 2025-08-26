@@ -1,7 +1,7 @@
 ﻿import { z } from 'zod';
 
 const ttsSchema = z.object({
-  text: z.string().min(1).max(5000), // Max 5000 characters
+  text: z.string().min(1).max(5000),
   voice: z.string().default('nigerian-female'),
   speed: z.number().min(0.5).max(2.0).default(1.0).optional(),
   format: z.enum(['mp3', 'wav']).default('mp3').optional()
@@ -38,7 +38,7 @@ export const ttsTool = {
       clearTimeout(timeout);
 
       if (!response.ok) {
-        throw new Error(TTS service error: );
+        throw new Error(`TTS service error: ${response.status}`);
       }
 
       const audioBuffer = await response.arrayBuffer();

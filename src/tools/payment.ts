@@ -1,8 +1,7 @@
 ﻿import { z } from 'zod';
-import crypto from 'crypto';
 
 const paymentSchema = z.object({
-  amount: z.number().positive().max(10000000), // Max 10M NGN
+  amount: z.number().positive().max(10000000),
   currency: z.string().default('NGN'),
   customer: z.object({
     email: z.string().email(),
@@ -36,7 +35,7 @@ export const paymentTool = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': Bearer 
+          'Authorization': `Bearer ${FLW_SECRET_KEY}`
         },
         body: JSON.stringify(payload)
       });
@@ -44,7 +43,7 @@ export const paymentTool = {
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(Flutterwave API error: );
+        throw new Error(`Flutterwave API error: ${data.message || 'Unknown error'}`);
       }
 
       return {
