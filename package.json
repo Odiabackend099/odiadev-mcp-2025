@@ -1,18 +1,31 @@
-{
+﻿{
   "name": "odiadev-mcp-server",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "private": true,
-  "type": "commonjs",
+  "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
     "dev": "vercel dev",
-    "start": "node api/healthcheck.js",
-    "build": "echo \"Serverless - no build step\"",
-    "vercel-build": "echo \"No build required for serverless functions\""
+    "start": "node --loader ts-node/esm src/mcp-server.ts",
+    "build": "tsc && node dist/mcp-server.js",
+    "vercel-build": "tsc",
+    "mcp": "node --loader ts-node/esm src/mcp-server.ts",
+    "test": "node --test src/**/*.test.js"
   },
-  "dependencies": { 
-    "zod": "^3.23.8" 
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.4",
+    "zod": "^3.23.8",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "crypto": "^1.0.1",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
   }
 }
