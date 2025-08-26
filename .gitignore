@@ -66,3 +66,12 @@ backup-*/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+AppData/
+Application Data/
+Cookies/
+Local Settings/
+My Documents/
+NetHood/
+PrintHood/
+# Add other system directories as needed

@@ -1,7 +1,23 @@
 {
-  "functions": {
-    "api/mcp.ts": {
-      "runtime": "@vercel/node@3.0.7"
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/node"
     }
-  }
+  ],
+  "routes": [
+    {
+      "src": "/api/health",
+      "dest": "/api/health.js"
+    },
+    {
+      "src": "/mcp",
+      "dest": "/api/mcp.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.js"
+    }
+  ]
 }
