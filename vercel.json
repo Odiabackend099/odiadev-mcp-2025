@@ -2,11 +2,8 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/mcp-server.ts",
-      "use": "@vercel/node@3.1.1",
-      "config": {
-        "includeFiles": ["dist/**"]
-      }
+      "src": "dist/mcp-server.js",
+      "use": "@vercel/node@3.1.1"
     }
   ],
   "routes": [
@@ -16,19 +13,7 @@
     },
     {
       "src": "/mcp",
-      "dest": "/dist/mcp-server.js" 
-    },
-    {
-      "src": "/api/(.*)",
       "dest": "/dist/mcp-server.js"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "dist/mcp-server.js": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
