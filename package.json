@@ -3,10 +3,16 @@
   "version": "2.1.0",
   "private": true,
   "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "vercel dev",
     "start": "node api/healthcheck.js",
-    "build": "echo \"Serverless - no build step\""
+    "build": "echo \"Serverless - no build step\"",
+    "vercel-build": "echo \"No build required for serverless functions\""
   },
-  "dependencies": { "zod": "^3.23.8" }
+  "dependencies": { 
+    "zod": "^3.23.8" 
+  }
 }
