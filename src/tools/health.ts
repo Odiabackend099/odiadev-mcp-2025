@@ -28,39 +28,6 @@ export const healthTool = {
       }
     };
 
-    if (input.include_dependencies) {
-      // Check critical dependencies
-      const deps = {
-        flutterwave: Boolean(process.env.FLW_SECRET_KEY && process.env.FLW_WEBHOOK_SECRET_HASH),
-        tts_service: Boolean(process.env.ODIA_TTS_BASE_URL),
-        authentication: Boolean(process.env.VALID_API_KEYS)
-      };
-      
-      Object.assign(health, { dependencies: deps });
-    }
-
-    if (input.check_external_apis) {
-      // Ping external APIs (optional)
-      const external = {
-        flutterwave_api: 'unknown',
-        tts_service: 'unknown'
-      };
-
-      try {
-        if (process.env.ODIA_TTS_BASE_URL) {
-          const ttsResponse = await fetch(process.env.ODIA_TTS_BASE_URL, { 
-            method: 'HEAD',
-            timeout: 5000 
-          });
-          external.tts_service = ttsResponse.ok ? 'healthy' : 'unhealthy';
-        }
-      } catch (error) {
-        external.tts_service = 'error';
-      }
-
-      Object.assign(health, { external_apis: external });
-    }
-
     return {
       content: [{
         type: 'text',
