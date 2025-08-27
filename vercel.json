@@ -3,5 +3,23 @@
     "api/**/*.js": {
       "runtime": "nodejs18.x"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/healthcheck",
+      "destination": "/api/healthcheck"
+    },
+    {
+      "source": "/api/payments/initiate",
+      "destination": "/api/payments/initiate"
+    },
+    {
+      "source": "/api/tts/speak",
+      "destination": "/api/tts/speak"
+    },
+    {
+      "source": "/api/webhook/flutterwave",
+      "destination": "/api/webhook/flutterwave"
+    }
+  ]
 }
