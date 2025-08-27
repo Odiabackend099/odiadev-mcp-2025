@@ -1,39 +1,27 @@
-﻿const { ok, handleOptions } = require('../lib/utils');
+﻿const ALLOWED_ORIGIN = process.env.CORS_ALLOW_ORIGIN || 'https://odia.dev';
 
-module.exports = async (req, res) => {
-  if (handleOptions(req, res)) return;
+function setCors(res) {
+  if (ALLOWED_ORIGIN) {
+    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+}
 
-  const welcomeData = {
+export default async function handler(req, res) {
+  setCors(res);
+  
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
+
+  res.status(200).json({
     message: 'Welcome to ODIADEV - Nigeria AI Infrastructure',
     company: 'ODIADEV',
-    description: 'MCP Server for Nigerian AI Infrastructure & Agent Automation',
     version: '3.1.0',
-    timestamp: new Date().toISOString(),
-    services: {
-      payments: 'Flutterwave integration for Nigerian businesses',
-      tts: 'Nigerian voice text-to-speech synthesis',
-      mcp: 'Model Context Protocol server for AI agents',
-      webhooks: 'Payment and system event processing'
-    },
-    agents: {
-      lexi: 'WhatsApp business automation agent',
-      miss: 'University support and academic assistant',
-      atlas: 'Luxury travel and VIP client management',
-      miss_legal: 'Legal document and NDPR compliance assistant'
-    },
-    api_endpoints: {
-      health: '/api/healthcheck - System health check',
-      payments: '/api/payments/initiate - Start payment flow',
-      tts: '/api/tts/speak - Text to speech conversion',
-      webhooks: '/api/webhook/flutterwave - Payment webhooks'
-    },
-    getting_started: {
-      authentication: 'Include x-api-key header with valid API key',
-      documentation: 'https://docs.odia.dev',
-      support: 'https://support.odia.dev'
-    },
     status: 'operational'
-  };
-
-  ok(res, welcomeData);
-};
+  });
+}
