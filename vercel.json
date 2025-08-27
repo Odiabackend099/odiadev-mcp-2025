@@ -1,23 +1,40 @@
-{
+﻿{
   "version": 2,
   "builds": [
     {
-      "src": "package.json",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api/health",
-      "dest": "/api/health.js"
+      "src": "/api/healthcheck",
+      "dest": "/api/healthcheck.js"
     },
     {
-      "src": "/mcp",
-      "dest": "/api/mcp.js"
+      "src": "/api/payments/initiate",
+      "dest": "/api/payments/initiate.js"
+    },
+    {
+      "src": "/api/tts/speak",
+      "dest": "/api/tts/speak.js"
+    },
+    {
+      "src": "/api/webhook/flutterwave",
+      "dest": "/api/webhook/flutterwave.js"
     },
     {
       "src": "/(.*)",
       "dest": "/api/index.js"
     }
-  ]
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

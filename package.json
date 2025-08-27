@@ -1,32 +1,31 @@
 {
   "name": "odiadev-mcp-server",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
-  "type": "module",
+  "description": "ODIADEV MCP Server - Nigerian AI Infrastructure",
+  "main": "api/index.js",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
     "dev": "vercel dev",
-    "start": "node --loader ts-node/esm src/mcp-server.ts",
-    "build": "tsc && node dist/mcp-server.js",
-    "vercel-build": "tsc",
-    "mcp": "node --loader ts-node/esm src/mcp-server.ts",
-    "test": "node --test src/**/*.test.js"
+    "start": "node api/index.js",
+    "test": "node --test api/*.js",
+    "deploy": "vercel --prod"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.4",
-    "crypto": "^1.0.1",
-    "express": "^4.19.2",
-    "express-rate-limit": "^7.4.0",
-    "helmet": "^7.1.0",
-    "winston": "^3.11.0",
-    "zod": "^3.23.8"
+    "winston": "^3.17.0",
+    "zod": "^3.25.76"
   },
-  "devDependencies": {
-    "@types/express": "^5.0.3",
-    "@types/node": "^20.0.0",
-    "ts-node": "^10.9.0",
-    "typescript": "^5.0.0"
-  }
+  "keywords": [
+    "mcp",
+    "ai",
+    "nigeria",
+    "flutterwave",
+    "tts",
+    "odiadev",
+    "serverless"
+  ],
+  "author": "ODIADEV",
+  "license": "MIT"
 }
