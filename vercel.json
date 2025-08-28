@@ -1,54 +1,50 @@
 ﻿{
-  "version": 2,
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 30
-    }
-  },
-  "routes": [
-    {
-      "src": "/api/healthcheck",
-      "dest": "/api/healthcheck.js"
-    },
-    {
-      "src": "/api/payments/initiate",
-      "dest": "/api/payments/initiate.js"
-    },
-    {
-      "src": "/api/tts/speak",
-      "dest": "/api/tts/speak.js"
-    },
-    {
-      "src": "/api/webhook/flutterwave",
-      "dest": "/api/webhook/flutterwave.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/api/index.js"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://odia.dev"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, x-api-key"
-        }
-      ]
-    }
-  ]
+    "functions":  {
+                      "api/**/*.js":  {
+                                          "maxDuration":  30,
+                                          "runtime":  "nodejs18.x"
+                                      }
+                  },
+    "headers":  [
+                    {
+                        "headers":  [
+                                        {
+                                            "key":  "Access-Control-Allow-Origin",
+                                            "value":  "https://odia.dev"
+                                        },
+                                        {
+                                            "key":  "Access-Control-Allow-Methods",
+                                            "value":  "GET, POST, OPTIONS"
+                                        },
+                                        {
+                                            "key":  "Access-Control-Allow-Headers",
+                                            "value":  "Content-Type, x-api-key"
+                                        }
+                                    ],
+                        "source":  "/api/(.*)"
+                    }
+                ],
+    "routes":  [
+                   {
+                       "src":  "/api/healthcheck",
+                       "dest":  "/api/healthcheck.js"
+                   },
+                   {
+                       "src":  "/api/payments/initiate",
+                       "dest":  "/api/payments/initiate.js"
+                   },
+                   {
+                       "src":  "/api/tts/speak",
+                       "dest":  "/api/tts/speak.js"
+                   },
+                   {
+                       "src":  "/api/webhook/flutterwave",
+                       "dest":  "/api/webhook/flutterwave.js"
+                   },
+                   {
+                       "src":  "/(.*)",
+                       "dest":  "/api/index.js"
+                   }
+               ],
+    "version":  2
 }

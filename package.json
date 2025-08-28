@@ -1,27 +1,34 @@
-﻿{
-  "name": "odiadev-mcp-server",
-  "version": "4.0.1",
-  "private": true,
-  "description": "ODIADEV MCP Server - Nigerian AI Infrastructure",
-  "main": "api/index.js",
-  "engines": {
-    "node": "18.x"
-  },
-  "scripts": {
-    "dev": "vercel dev",
-    "deploy": "vercel --prod",
-    "test": "node api/healthcheck.js",
-    "start": "node api/index.js"
-  },
-  "dependencies": {
-    "zod": "^3.22.4"
-  },
-  "devDependencies": {},
-  "keywords": ["mcp", "ai", "nigeria", "serverless", "odiadev", "flutterwave", "tts"],
-  "author": "ODIADEV",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Odiabackend099/odiadev-mcp-2025.git"
-  }
+{
+    "scripts": {
+        "start": "node api/index.js",
+        "test": "node api/healthcheck.js",
+        "dev": "vercel dev",
+        "deploy": "vercel --prod"
+    },
+    "description": "ODIADEV MCP Server - Nigerian AI Infrastructure",
+    "license": "MIT",
+    "version": "4.1.0",
+    "author": "ODIADEV",
+    "engines": {
+        "node": "18.x"
+    },
+    "name": "odiadev-mcp-server",
+    "private": true,
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Odiabackend099/odiadev-mcp-server.git"
+    },
+    "main": "api/index.js",
+    "dependencies": {
+        "zod": "^3.25.76"
+    },
+    "keywords": [
+        "mcp",
+        "ai",
+        "nigeria",
+        "serverless",
+        "odiadev",
+        "flutterwave",
+        "tts"
+    ]
 }

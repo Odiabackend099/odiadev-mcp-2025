@@ -1,38 +1,36 @@
-﻿const CORS_ORIGIN = process.env.CORS_ALLOW_ORIGIN || "https://odia.dev";
-
-function setCors(res) {
-  res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Vary", "Origin");
-}
+﻿const { setCors, handleOptions, jsonResponse } = require("../lib/utils");
 
 module.exports = async (req, res) => {
-  setCors(res);
+  if (handleOptions(req, res)) return;
 
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
-
-  res.setHeader("Content-Type", "application/json");
-  return res.status(200).json({
+  const welcomeData = {
     message: "Welcome to ODIADEV - Nigeria's AI Infrastructure",
     company: "ODIADEV",
-    version: "4.0.0",
+    version: "4.1.0",
     timestamp: new Date().toISOString(),
+    status: "operational",
     endpoints: {
       health: "/api/healthcheck - System health and status",
-      payments: "/api/payments/initiate - Flutterwave payments",
-      tts: "/api/tts/speak - Nigerian voice synthesis",
-      webhooks: "/api/webhook/flutterwave - Payment webhooks"
+      payments: "/api/payments/initiate - Flutterwave payment processing",
+      tts: "/api/tts/speak - Nigerian voice text-to-speech",
+      webhooks: "/api/webhook/flutterwave - Payment event processing"
     },
     agents: {
-      lexi: "WhatsApp business automation",
-      miss: "University academic support",
-      atlas: "Luxury travel management",
-      legal: "NDPR compliance assistant"
+      lexi: "WhatsApp business automation and customer onboarding",
+      miss: "University academic support for Nigerian institutions",
+      atlas: "Luxury travel and VIP client management", 
+      legal: "NDPR compliance and legal document processing"
     },
+    features: [
+      "Nigerian network optimized (3G/4G friendly)",
+      "Flutterwave payment integration",
+      "Multi-language TTS support",
+      "CORS configured for Nigerian domains",
+      "Automatic retry logic for unreliable connections"
+    ],
     documentation: "https://docs.odia.dev",
-    status: "production-ready"
-  });
+    support: "https://support.odia.dev"
+  };
+
+  jsonResponse(res, 200, welcomeData);
 };

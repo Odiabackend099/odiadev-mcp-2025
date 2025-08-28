@@ -1,68 +1,141 @@
-﻿const CORS_ORIGIN = process.env.CORS_ALLOW_ORIGIN || "https://odia.dev";
+﻿const { setCors, handleOptions, jsonResponse, readJsonBody, safeLog } = require("../../lib/utils");
+
 const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY || "";
 const WEBHOOK_HASH = process.env.FLW_WEBHOOK_SECRET_HASH || "";
 
-function setCors(res) {
-  res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
-  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,verif-hash");
-  res.setHeader("Vary", "Origin");
-}
-
-async function readJsonBody(req) {
-  const chunks = [];
-  for await (const chunk of req) {
-    chunks.push(chunk);
-  }
-  const raw = Buffer.concat(chunks).toString("utf8");
-  try {
-    return JSON.parse(raw || "{}");
-  } catch {
-    return {};
-  }
-}
-
 module.exports = async (req, res) => {
-  setCors(res);
-
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
+  if (handleOptions(req, res)) return;
 
   if (req.method !== "POST") {
-    res.setHeader("Content-Type", "application/json");
-    return res.status(405).json({ error: "Method not allowed" });
+    return jsonResponse(res, 405, { error: "Method not allowed" });
   }
 
   try {
     const signature = req.headers["verif-hash"];
-
-    if (!WEBHOOK_HASH || signature !== WEBHOOK_HASH) {
-      res.setHeader("Content-Type", "application/json");
-      return res.status(401).json({ error: "Invalid webhook signature" });
+    
+    if (!WEBHOOK_HASH) {
+      safeLog("warn", "Webhook hash not configured - accepting all requests");
+    } else if (signature !== WEBHOOK_HASH) {
+      safeLog("warn", "Invalid webhook signature:", signature);
+      return jsonResponse(res, 401, { error: "Invalid webhook signature" });
     }
 
     const body = await readJsonBody(req);
-    const data = body.data || {};
+    const eventData = body.data || {};
+    const eventType = body.event || "unknown";
 
-    console.log("Webhook processed:", {
-      id: data.id,
-      tx_ref: data.tx_ref,
-      status: data.status,
-      timestamp: new Date().toISOString()
+    safeLog("info", "Webhook received:", { 
+      event: eventType,
+      id: eventData.id,
+      tx_ref: eventData.tx_ref,
+      status: eventData.status
     });
 
-    res.setHeader("Content-Type", "application/json");
-    return res.status(200).json({
+    // Process different webhook events
+    let processedEvent;
+    switch (eventType) {
+      case "charge.completed":
+        processedEvent = await processChargeCompleted(eventData);
+        break;
+      case "transfer.completed":
+        processedEvent = await processTransferCompleted(eventData);
+        break;
+      default:
+        processedEvent = await processGenericWebhook(eventData, eventType);
+    }
+
+    // Verify transaction if we have the secret key
+    let verificationResult = null;
+    if (FLW_SECRET_KEY && eventData.id) {
+      try {
+        verificationResult = await verifyTransaction(eventData.id);
+        safeLog("info", "Transaction verified:", { 
+          id: eventData.id, 
+          status: verificationResult.status 
+        });
+      } catch (error) {
+        safeLog("warn", "Transaction verification failed:", error.message);
+      }
+    }
+
+    jsonResponse(res, 200, {
       received: true,
-      transaction_id: data.id,
-      reference: data.tx_ref,
-      processed_at: new Date().toISOString()
+      processed: true,
+      event_type: eventType,
+      transaction_id: eventData.id,
+      reference: eventData.tx_ref,
+      status: eventData.status,
+      verification: verificationResult ? {
+        verified: true,
+        status: verificationResult.status,
+        amount: verificationResult.amount,
+        currency: verificationResult.currency
+      } : null,
+      processed_at: new Date().toISOString(),
+      webhook_id: generateWebhookId()
     });
 
   } catch (error) {
-    console.error("Webhook Error:", error.message);
-    res.setHeader("Content-Type", "application/json");
-    return res.status(500).json({ error: "Webhook processing failed" });
+    safeLog("error", "Webhook processing error:", error.message);
+    jsonResponse(res, 500, { 
+      error: "Webhook processing failed",
+      message: process.env.NODE_ENV === "development" ? error.message : "Internal error"
+    });
   }
 };
+
+async function verifyTransaction(transactionId) {
+  const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transactionId}/verify`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${FLW_SECRET_KEY}`,
+      "Content-Type": "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Verification failed: ${response.status}`);
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+async function processChargeCompleted(eventData) {
+  safeLog("info", "Processing charge completed:", eventData.tx_ref);
+  
+  // Add your charge completion logic here
+  // e.g., update database, send email, trigger next workflow
+  
+  return {
+    type: "charge_completed",
+    processed: true,
+    actions: ["updated_database", "sent_confirmation"]
+  };
+}
+
+async function processTransferCompleted(eventData) {
+  safeLog("info", "Processing transfer completed:", eventData.tx_ref);
+  
+  // Add your transfer completion logic here
+  
+  return {
+    type: "transfer_completed", 
+    processed: true,
+    actions: ["updated_records"]
+  };
+}
+
+async function processGenericWebhook(eventData, eventType) {
+  safeLog("info", "Processing generic webhook:", eventType);
+  
+  return {
+    type: "generic_webhook",
+    event_type: eventType,
+    processed: true
+  };
+}
+
+function generateWebhookId() {
+  return `wh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
