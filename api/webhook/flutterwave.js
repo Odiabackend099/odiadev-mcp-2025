@@ -1,4 +1,4 @@
-const { handleOptions, jsonResponse, readJsonBody, safeLog, checkRateLimit, withRetry } = require("../../lib/utils");
+const { handleOptions, jsonResponse, readJsonBody, safeLog, checkRateLimit, withRetry, validateInput } = require("../../lib/utils");
 const config = require("../../lib/config");
 
 module.exports = async (req, res) => {

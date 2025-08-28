@@ -1,8 +1,11 @@
-const { handleOptions, jsonResponse, readJsonBody, withRetry, safeLog, checkRateLimit, validateNigerianPhone, validateNigerianAmount, validateEmail } = require("../../lib/utils");
+const { handleOptions, jsonResponse, readJsonBody, withRetry, safeLog, checkRateLimit, validateNigerianPhone, validateNigerianAmount, validateEmail, requireApiKey, validateInput } = require("../../lib/utils");
 const config = require("../../lib/config");
 
 module.exports = async (req, res) => {
   if (handleOptions(req, res)) return;
+
+  // API key authentication
+  if (!(await requireApiKey(req, res))) return;
 
   // Rate limiting for payment endpoint
   if (!checkRateLimit(req, res, 20, 60000)) return; // 20 requests per minute
@@ -106,34 +109,47 @@ module.exports = async (req, res) => {
 };
 
 function validatePaymentRequest(body) {
-  // Amount validation
-  if (!body.amount || typeof body.amount !== "number" || body.amount <= 0) {
-    return { valid: false, error: "Valid amount (number > 0) is required" };
+  // Enhanced input validation for Nigerian fintech compliance
+  
+  // Amount validation with proper type checking
+  const amountValidation = validateInput(body.amount, 'number', { min: 1, max: 50000000 });
+  if (!amountValidation.valid) {
+    return { valid: false, error: `Invalid amount: ${amountValidation.error}` };
   }
 
   // Nigerian currency and amount limits
-  const amountValidation = validateNigerianAmount(body.amount, body.currency);
-  if (!amountValidation.valid) {
-    return amountValidation;
+  const nigerianAmountValidation = validateNigerianAmount(body.amount, body.currency);
+  if (!nigerianAmountValidation.valid) {
+    return nigerianAmountValidation;
   }
 
-  // Customer validation
-  if (!body.customer || !body.customer.email || !body.customer.name) {
-    return { valid: false, error: "Customer email and name are required" };
+  // Customer validation with enhanced checks
+  if (!body.customer || typeof body.customer !== 'object') {
+    return { valid: false, error: "Customer information is required" };
   }
 
   // Email validation
+  if (!body.customer.email) {
+    return { valid: false, error: "Customer email is required" };
+  }
   const emailValidation = validateEmail(body.customer.email);
   if (!emailValidation.valid) {
     return emailValidation;
   }
 
-  // Transaction reference validation
-  if (!body.tx_ref || body.tx_ref.length < 6 || body.tx_ref.length > 50) {
-    return { valid: false, error: "Transaction reference must be 6-50 characters" };
+  // Name validation with length checks
+  const nameValidation = validateInput(body.customer.name, 'string', { minLength: 2, maxLength: 100 });
+  if (!nameValidation.valid) {
+    return { valid: false, error: `Invalid customer name: ${nameValidation.error}` };
   }
 
-  // Nigerian phone number validation (optional)
+  // Transaction reference validation
+  const txRefValidation = validateInput(body.tx_ref, 'string', { minLength: 6, maxLength: 50 });
+  if (!txRefValidation.valid) {
+    return { valid: false, error: `Invalid transaction reference: ${txRefValidation.error}` };
+  }
+
+  // Nigerian phone number validation (optional but if provided must be valid)
   if (body.customer.phone) {
     const phoneValidation = validateNigerianPhone(body.customer.phone);
     if (!phoneValidation.valid) {
@@ -141,33 +157,45 @@ function validatePaymentRequest(body) {
     }
   }
 
-  // Customer name validation
-  if (body.customer.name.length < 2 || body.customer.name.length > 100) {
-    return { valid: false, error: "Customer name must be 2-100 characters" };
-  }
-
-  // Currency validation
+  // Currency validation with Nigerian focus
   const allowedCurrencies = ['NGN', 'USD', 'GHS', 'KES', 'UGX', 'TZS'];
   if (body.currency && !allowedCurrencies.includes(body.currency)) {
     return { valid: false, error: `Currency must be one of: ${allowedCurrencies.join(', ')}` };
   }
 
-  // Redirect URL validation (basic)
+  // Redirect URL validation (if provided)
   if (body.redirect_url) {
     try {
-      new URL(body.redirect_url);
+      const url = new URL(body.redirect_url);
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        return { valid: false, error: "Redirect URL must use HTTP or HTTPS" };
+      }
     } catch {
       return { valid: false, error: "Invalid redirect URL format" };
     }
   }
 
-  // Title and description length validation
-  if (body.title && body.title.length > 100) {
-    return { valid: false, error: "Payment title must be under 100 characters" };
+  // Title and description validation
+  if (body.title) {
+    const titleValidation = validateInput(body.title, 'string', { maxLength: 100 });
+    if (!titleValidation.valid) {
+      return { valid: false, error: `Invalid title: ${titleValidation.error}` };
+    }
   }
 
-  if (body.description && body.description.length > 500) {
-    return { valid: false, error: "Payment description must be under 500 characters" };
+  if (body.description) {
+    const descValidation = validateInput(body.description, 'string', { maxLength: 500 });
+    if (!descValidation.valid) {
+      return { valid: false, error: `Invalid description: ${descValidation.error}` };
+    }
+  }
+
+  // Meta validation (if provided)
+  if (body.meta && typeof body.meta === 'object') {
+    const metaKeys = Object.keys(body.meta);
+    if (metaKeys.length > 10) {
+      return { valid: false, error: "Too many metadata fields (max 10)" };
+    }
   }
 
   return { valid: true };

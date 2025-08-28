@@ -1,8 +1,11 @@
-﻿﻿const { handleOptions, jsonResponse, readJsonBody, withRetry, safeLog, setSecurityHeaders, checkRateLimit } = require("../../lib/utils");
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿const { handleOptions, jsonResponse, readJsonBody, withRetry, safeLog, setSecurityHeaders, checkRateLimit, requireApiKey, validateInput } = require("../../lib/utils");
 const config = require("../../lib/config");
 
 module.exports = async (req, res) => {
   if (handleOptions(req, res)) return;
+
+  // API key authentication
+  if (!(await requireApiKey(req, res))) return;
 
   // Rate limiting for TTS endpoint
   if (!checkRateLimit(req, res, 10, 60000)) return; // 10 requests per minute for TTS
@@ -99,22 +102,52 @@ module.exports = async (req, res) => {
 };
 
 function validateTTSRequest(body) {
-  if (!body.text || typeof body.text !== "string") {
-    return { valid: false, error: "Text field is required and must be a string" };
+  // Enhanced text validation
+  const textValidation = validateInput(body.text, 'string', {
+    minLength: 1,
+    maxLength: config.tts.maxTextLength
+  });
+  
+  if (!textValidation.valid) {
+    return { valid: false, error: `Text validation failed: ${textValidation.error}` };
   }
 
   if (body.text.trim().length === 0) {
-    return { valid: false, error: "Text cannot be empty" };
+    return { valid: false, error: "Text cannot be empty or only whitespace" };
   }
 
-  if (body.text.length > config.tts.maxTextLength) {
-    return { valid: false, error: `Text too long. Maximum ${config.tts.maxTextLength} characters allowed.` };
+  // Check for potentially harmful content
+  const suspiciousPatterns = [
+    /<script[^>]*>/i,
+    /javascript:/i,
+    /data:.*base64/i,
+    /\beval\s*\(/i
+  ];
+  
+  if (suspiciousPatterns.some(pattern => pattern.test(body.text))) {
+    return { valid: false, error: "Text contains potentially harmful content" };
   }
 
-  // Optional voice validation
+  // Voice validation with specific allowed voices
   const allowedVoices = ["nigerian-female", "nigerian-male", "en-us-female", "en-us-male"];
   if (body.voice && !allowedVoices.includes(body.voice)) {
     return { valid: false, error: `Invalid voice. Allowed: ${allowedVoices.join(", ")}` };
+  }
+
+  // Speed validation (optional parameter)
+  if (body.speed !== undefined) {
+    const speedValidation = validateInput(body.speed, 'number', { min: 0.5, max: 2.0 });
+    if (!speedValidation.valid) {
+      return { valid: false, error: `Invalid speed: ${speedValidation.error}` };
+    }
+  }
+
+  // Pitch validation (optional parameter)
+  if (body.pitch !== undefined) {
+    const pitchValidation = validateInput(body.pitch, 'number', { min: 0.5, max: 2.0 });
+    if (!pitchValidation.valid) {
+      return { valid: false, error: `Invalid pitch: ${pitchValidation.error}` };
+    }
   }
 
   return { valid: true };
