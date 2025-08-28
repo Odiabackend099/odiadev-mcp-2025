@@ -1,4 +1,3 @@
-﻿export const config = { runtime: 'nodejs', maxDuration: 10 };
 const ALLOWED_ORIGIN = process.env.CORS_ALLOW_ORIGIN || "https://odia.dev";
 const TTS_URL = process.env.ODIA_TTS_BASE_URL || "https://odiadev-tts-plug-n-play.onrender.com/speak";
 const DEFAULT_VOICE = process.env.ODIA_TTS_DEFAULT_VOICE || "nigerian-female";

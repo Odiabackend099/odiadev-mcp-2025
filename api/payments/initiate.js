@@ -1,4 +1,3 @@
-﻿export const config = { runtime: 'nodejs', maxDuration: 10 };
 const ALLOWED_ORIGIN = process.env.CORS_ALLOW_ORIGIN || "https://odia.dev";
 const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY || "";
 const VALID_KEYS = (process.env.VALID_API_KEYS || "").split(",").map(s=>s.trim()).filter(Boolean);
