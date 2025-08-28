@@ -1,10 +1,11 @@
-const { setCors, handleOptions, jsonResponse, readJsonBody, safeLog } = require("../../lib/utils");
-
-const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY || "";
-const WEBHOOK_HASH = process.env.FLW_WEBHOOK_SECRET_HASH || process.env.FLUTTERWAVE_WEBHOOK_SECRET || "";
+const { handleOptions, jsonResponse, readJsonBody, safeLog, checkRateLimit, withRetry } = require("../../lib/utils");
+const config = require("../../lib/config");
 
 module.exports = async (req, res) => {
   if (handleOptions(req, res)) return;
+
+  // Rate limiting for webhook endpoint
+  if (!checkRateLimit(req, res, 50, 60000)) return; // 50 webhooks per minute
 
   if (req.method !== "POST") {
     return jsonResponse(res, 405, { error: "Method not allowed" });
@@ -13,10 +14,10 @@ module.exports = async (req, res) => {
   try {
     const signature = req.headers["verif-hash"];
     
-    if (!WEBHOOK_HASH) {
+    if (!config.flutterwave.webhookHash) {
       safeLog("warn", "Webhook hash not configured - accepting all requests");
-    } else if (signature !== WEBHOOK_HASH) {
-      safeLog("warn", "Invalid webhook signature:", signature);
+    } else if (signature !== config.flutterwave.webhookHash) {
+      safeLog("warn", "Invalid webhook signature:", signature ? "present" : "missing");
       return jsonResponse(res, 401, { error: "Invalid webhook signature" });
     }
 
@@ -46,7 +47,7 @@ module.exports = async (req, res) => {
 
     // Verify transaction if we have the secret key
     let verificationResult = null;
-    if (FLW_SECRET_KEY && eventData.id) {
+    if (config.flutterwave.secretKey && eventData.id) {
       try {
         verificationResult = await verifyTransaction(eventData.id);
         safeLog("info", "Transaction verified:", { 
@@ -85,20 +86,24 @@ module.exports = async (req, res) => {
 };
 
 async function verifyTransaction(transactionId) {
-  const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transactionId}/verify`, {
-    method: "GET",
-    headers: {
-      "Authorization": `Bearer ${FLW_SECRET_KEY}`,
-      "Content-Type": "application/json"
+  const verifyCall = async () => {
+    const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transactionId}/verify`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${config.flutterwave.secretKey}`,
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Verification failed: ${response.status}`);
     }
-  });
 
-  if (!response.ok) {
-    throw new Error(`Verification failed: ${response.status}`);
-  }
-
-  const result = await response.json();
-  return result.data;
+    const result = await response.json();
+    return result.data;
+  };
+  
+  return await withRetry(verifyCall);
 }
 
 async function processChargeCompleted(eventData) {

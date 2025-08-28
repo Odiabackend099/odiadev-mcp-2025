@@ -1,16 +1,17 @@
-const { setCors, handleOptions, jsonResponse, readJsonBody, withRetry, safeLog } = require("../../lib/utils");
-
-const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY || process.env.FLUTTERWAVE_SECRET_KEY || "";
-const FLW_PUBLIC_KEY = process.env.FLW_PUBLIC_KEY || process.env.FLUTTERWAVE_PUBLIC_KEY || "";
+const { handleOptions, jsonResponse, readJsonBody, withRetry, safeLog, checkRateLimit, validateNigerianPhone, validateNigerianAmount, validateEmail } = require("../../lib/utils");
+const config = require("../../lib/config");
 
 module.exports = async (req, res) => {
   if (handleOptions(req, res)) return;
+
+  // Rate limiting for payment endpoint
+  if (!checkRateLimit(req, res, 20, 60000)) return; // 20 requests per minute
 
   if (req.method !== "POST") {
     return jsonResponse(res, 405, { error: "Method not allowed" });
   }
 
-  if (!FLW_SECRET_KEY) {
+  if (!config.flutterwave.secretKey) {
     return jsonResponse(res, 500, { 
       error: "Payment service not configured",
       hint: "Set FLW_SECRET_KEY in environment variables"
@@ -56,7 +57,7 @@ module.exports = async (req, res) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${FLW_SECRET_KEY}`
+          "Authorization": `Bearer ${config.flutterwave.secretKey}`
         },
         body: JSON.stringify(payload)
       });
@@ -105,22 +106,68 @@ module.exports = async (req, res) => {
 };
 
 function validatePaymentRequest(body) {
+  // Amount validation
   if (!body.amount || typeof body.amount !== "number" || body.amount <= 0) {
     return { valid: false, error: "Valid amount (number > 0) is required" };
   }
 
+  // Nigerian currency and amount limits
+  const amountValidation = validateNigerianAmount(body.amount, body.currency);
+  if (!amountValidation.valid) {
+    return amountValidation;
+  }
+
+  // Customer validation
   if (!body.customer || !body.customer.email || !body.customer.name) {
     return { valid: false, error: "Customer email and name are required" };
   }
 
-  if (!body.tx_ref || body.tx_ref.length < 6) {
-    return { valid: false, error: "Transaction reference required (minimum 6 characters)" };
+  // Email validation
+  const emailValidation = validateEmail(body.customer.email);
+  if (!emailValidation.valid) {
+    return emailValidation;
   }
 
-  // Email validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(body.customer.email)) {
-    return { valid: false, error: "Valid customer email is required" };
+  // Transaction reference validation
+  if (!body.tx_ref || body.tx_ref.length < 6 || body.tx_ref.length > 50) {
+    return { valid: false, error: "Transaction reference must be 6-50 characters" };
+  }
+
+  // Nigerian phone number validation (optional)
+  if (body.customer.phone) {
+    const phoneValidation = validateNigerianPhone(body.customer.phone);
+    if (!phoneValidation.valid) {
+      return phoneValidation;
+    }
+  }
+
+  // Customer name validation
+  if (body.customer.name.length < 2 || body.customer.name.length > 100) {
+    return { valid: false, error: "Customer name must be 2-100 characters" };
+  }
+
+  // Currency validation
+  const allowedCurrencies = ['NGN', 'USD', 'GHS', 'KES', 'UGX', 'TZS'];
+  if (body.currency && !allowedCurrencies.includes(body.currency)) {
+    return { valid: false, error: `Currency must be one of: ${allowedCurrencies.join(', ')}` };
+  }
+
+  // Redirect URL validation (basic)
+  if (body.redirect_url) {
+    try {
+      new URL(body.redirect_url);
+    } catch {
+      return { valid: false, error: "Invalid redirect URL format" };
+    }
+  }
+
+  // Title and description length validation
+  if (body.title && body.title.length > 100) {
+    return { valid: false, error: "Payment title must be under 100 characters" };
+  }
+
+  if (body.description && body.description.length > 500) {
+    return { valid: false, error: "Payment description must be under 500 characters" };
   }
 
   return { valid: true };

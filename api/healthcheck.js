@@ -1,15 +1,16 @@
-﻿﻿const { setCors, handleOptions, jsonResponse } = require("../lib/utils");
+﻿﻿﻿const { handleOptions, jsonResponse } = require("../lib/utils");
+const config = require("../lib/config");
 
 module.exports = async (req, res) => {
   if (handleOptions(req, res)) return;
 
   const healthData = {
     ok: true,
-    service: "ODIADEV MCP Server",
-    version: "4.1.0",
+    service: config.app.name,
+    version: config.app.version,
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    domain: "https://mcp.odia.dev",
+    domain: config.app.domain,
     build: process.env.VERCEL_GIT_COMMIT_SHA || "local-dev",
     environment: {
       node: process.version,
@@ -19,21 +20,31 @@ module.exports = async (req, res) => {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
     },
     configuration: {
-      ttsConfigured: Boolean(process.env.ODIA_TTS_BASE_URL),
-      flutterwaveConfigured: Boolean(process.env.FLW_SECRET_KEY && process.env.FLW_WEBHOOK_SECRET_HASH),
-      apiKeysConfigured: Boolean(process.env.VALID_API_KEYS),
-      corsOrigin: process.env.CORS_ALLOW_ORIGIN || "https://mcp.odia.dev"
+      ttsConfigured: config.validate.tts(),
+      flutterwaveConfigured: config.validate.flutterwave(),
+      apiKeysConfigured: config.validate.apiKeys(),
+      corsOrigin: config.security.corsOrigin,
+      environment: config.app.environment,
+      rateLimit: {
+        maxRequests: config.security.rateLimit.maxRequests,
+        windowMs: config.security.rateLimit.windowMs
+      }
     },
     mcp: {
-      protocol: "2024-11-05",
-      capabilities: ["tools", "resources", "prompts"],
-      tools: ["payment_initiate", "text_to_speech", "health_check", "webhook_process"],
-      agents: ["lexi", "miss", "atlas", "legal"]
+      protocol: config.mcp.protocol,
+      capabilities: config.mcp.capabilities,
+      tools: config.mcp.tools,
+      agents: config.mcp.agents
     },
     nigerian_optimizations: {
       retry_logic: "3 attempts with exponential backoff",
       timeout_handling: "30 seconds for slow connections",
-      network_friendly: "Minimal payloads for 2G/3G networks"
+      network_friendly: "Minimal payloads for 2G/3G networks",
+      currency_support: config.nigerian.currency,
+      amount_limits: {
+        min: config.nigerian.minAmount,
+        max: config.nigerian.maxAmount
+      }
     },
     status: "fully_operational"
   };

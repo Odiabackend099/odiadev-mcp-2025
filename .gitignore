@@ -74,3 +74,5 @@ test-*
 *.test.js
 .vercel
 .env*.local
+
+.vercel
