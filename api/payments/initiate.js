@@ -11,7 +11,7 @@ module.exports = async (req, res) => {
     return jsonResponse(res, 405, { error: "Method not allowed" });
   }
 
-  if (!config.flutterwave.secretKey) {
+  if (!config.get.flutterwaveSecret()) {
     return jsonResponse(res, 500, { 
       error: "Payment service not configured",
       hint: "Set FLW_SECRET_KEY in environment variables"
@@ -57,7 +57,7 @@ module.exports = async (req, res) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${config.flutterwave.secretKey}`
+          "Authorization": `Bearer ${config.get.flutterwaveSecret()}`
         },
         body: JSON.stringify(payload)
       });

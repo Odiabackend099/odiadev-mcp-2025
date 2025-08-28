@@ -14,9 +14,9 @@ module.exports = async (req, res) => {
   try {
     const signature = req.headers["verif-hash"];
     
-    if (!config.flutterwave.webhookHash) {
+    if (!config.get.flutterwaveWebhook()) {
       safeLog("warn", "Webhook hash not configured - accepting all requests");
-    } else if (signature !== config.flutterwave.webhookHash) {
+    } else if (signature !== config.get.flutterwaveWebhook()) {
       safeLog("warn", "Invalid webhook signature:", signature ? "present" : "missing");
       return jsonResponse(res, 401, { error: "Invalid webhook signature" });
     }
@@ -47,7 +47,7 @@ module.exports = async (req, res) => {
 
     // Verify transaction if we have the secret key
     let verificationResult = null;
-    if (config.flutterwave.secretKey && eventData.id) {
+    if (config.get.flutterwaveSecret() && eventData.id) {
       try {
         verificationResult = await verifyTransaction(eventData.id);
         safeLog("info", "Transaction verified:", { 
@@ -90,7 +90,7 @@ async function verifyTransaction(transactionId) {
     const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transactionId}/verify`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${config.flutterwave.secretKey}`,
+        "Authorization": `Bearer ${config.get.flutterwaveSecret()}`,
         "Content-Type": "application/json"
       }
     });

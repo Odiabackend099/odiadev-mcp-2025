@@ -1,11 +1,11 @@
-﻿const { setCors, handleOptions, jsonResponse, readJsonBody, withRetry, safeLog } = require("../../lib/utils");
-
-const TTS_URL = process.env.ODIA_TTS_BASE_URL || "https://odiadev-tts-plug-n-play.onrender.com/speak";
-const TIMEOUT_MS = parseInt(process.env.ODIA_TTS_TIMEOUT_MS || "30000");
-const MAX_TEXT_LENGTH = parseInt(process.env.ODIA_TTS_MAX_TEXT_LENGTH || "500");
+﻿﻿const { handleOptions, jsonResponse, readJsonBody, withRetry, safeLog, setSecurityHeaders, checkRateLimit } = require("../../lib/utils");
+const config = require("../../lib/config");
 
 module.exports = async (req, res) => {
   if (handleOptions(req, res)) return;
+
+  // Rate limiting for TTS endpoint
+  if (!checkRateLimit(req, res, 10, 60000)) return; // 10 requests per minute for TTS
 
   if (req.method !== "POST") {
     return jsonResponse(res, 405, { error: "Method not allowed" });
@@ -23,18 +23,18 @@ module.exports = async (req, res) => {
 
     const ttsCall = async () => {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+      const timeout = setTimeout(() => controller.abort(), config.tts.timeout);
 
       try {
-        const response = await fetch(TTS_URL, {
+        const response = await fetch(config.tts.baseUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "User-Agent": "ODIADEV-MCP-Server/4.1.0"
+            "User-Agent": `${config.app.name}/${config.app.version}`
           },
           body: JSON.stringify({
-            text: body.text.slice(0, MAX_TEXT_LENGTH), // Prevent abuse
-            voice: body.voice || "nigerian-female",
+            text: body.text.slice(0, config.tts.maxTextLength), // Prevent abuse
+            voice: body.voice || config.tts.defaultVoice,
             speed: body.speed || 1.0,
             pitch: body.pitch || 1.0
           }),
@@ -61,11 +61,11 @@ module.exports = async (req, res) => {
     safeLog("info", "TTS successful:", { 
       textLength: body.text.length, 
       audioSize: buffer.length,
-      voice: body.voice || "nigerian-female"
+      voice: body.voice || config.tts.defaultVoice
     });
 
     // Set proper headers for audio response
-    setCors(res);
+    setSecurityHeaders(res);
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Content-Length", buffer.length.toString());
     res.setHeader("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
@@ -107,8 +107,8 @@ function validateTTSRequest(body) {
     return { valid: false, error: "Text cannot be empty" };
   }
 
-  if (body.text.length > MAX_TEXT_LENGTH) {
-    return { valid: false, error: `Text too long. Maximum ${MAX_TEXT_LENGTH} characters allowed.` };
+  if (body.text.length > config.tts.maxTextLength) {
+    return { valid: false, error: `Text too long. Maximum ${config.tts.maxTextLength} characters allowed.` };
   }
 
   // Optional voice validation
