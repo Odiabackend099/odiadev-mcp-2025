@@ -10,7 +10,7 @@
     "version": "4.1.0",
     "author": "ODIADEV",
     "engines": {
-        "node": "18.x"
+        "node": "22.x"
     },
     "name": "odiadev-mcp-server",
     "private": true,
@@ -32,3 +32,4 @@
         "tts"
     ]
 }
+
