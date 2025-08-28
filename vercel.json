@@ -2,9 +2,12 @@
   "version": 2,
   "functions": {
     "api/**/*.js": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 10,
-      "memory": 128
+      "runtime": "@vercel/node@3.0.0",
+      "maxDuration": 30,
+      "memory": 256
     }
+  },
+  "env": {
+    "NODE_ENV": "production"
   }
 }
