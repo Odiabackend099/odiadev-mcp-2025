@@ -3,9 +3,7 @@
   "routes": [
     { "src": "/health", "dest": "/api/healthcheck.js" },
     { "src": "/webhook/flutterwave", "dest": "/api/webhook/flutterwave.js" },
-    { "src": "/webhook/twilio/whatsapp", "dest": "/api/webhook/twilio/whatsapp.js" },
     { "src": "/payments/initiate", "dest": "/api/payments/initiate.js" },
-    { "src": "/tts/speak", "dest": "/api/tts/speak.js" },
-    { "src": "/agents/deploy", "dest": "/api/agents/deploy.js" }
+    { "src": "/tts/speak", "dest": "/api/tts/speak.js" }
   ]
 }

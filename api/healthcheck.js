@@ -1,4 +1,4 @@
-??const { handleOptions, jsonResponse } = require("../lib/utils");
+﻿﻿const { handleOptions, jsonResponse } = require("../lib/utils");
 const config = require("../lib/config");
 
 module.exports = async (req, res) => {
