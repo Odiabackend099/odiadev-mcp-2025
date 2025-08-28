@@ -1,4 +1,4 @@
-﻿const { setCors, handleOptions, jsonResponse } = require("../lib/utils");
+﻿﻿const { handleOptions, jsonResponse } = require("../lib/utils");
 
 module.exports = async (req, res) => {
   if (handleOptions(req, res)) return;
