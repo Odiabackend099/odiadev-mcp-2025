@@ -1,16 +1,19 @@
-{
+﻿{
   "name": "odiadev-mcp-server",
-  "version": "3.2.1",
+  "version": "4.0.0",
   "private": true,
-  "description": "ODIADEV MCP Server - serverless APIs (TTS + payments + webhooks)",
-  "engines": { "node": ">=18" },
+  "description": "ODIADEV MCP Server - Nigerian AI Infrastructure",
+  "main": "api/index.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel --prod",
-    "test": "node --test"
+    "test": "node api/healthcheck.js"
   },
-  "dependencies": {
-    "winston": "^3.17.0",
-    "zod": "^3.25.76"
-  }
+  "dependencies": {},
+  "keywords": ["mcp", "ai", "nigeria", "serverless", "odiadev"],
+  "author": "ODIADEV",
+  "license": "MIT"
 }

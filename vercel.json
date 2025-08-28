@@ -1,13 +1,8 @@
-{
+﻿{
   "version": 2,
   "functions": {
     "api/**/*.js": {
-      "runtime": "@vercel/node@3.0.0",
-      "maxDuration": 30,
-      "memory": 256
+      "runtime": "nodejs18.x"
     }
-  },
-  "env": {
-    "NODE_ENV": "production"
   }
 }
