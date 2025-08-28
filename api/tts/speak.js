@@ -1,13 +1,7 @@
-﻿const CORS_ORIGIN = process.env.CORS_ALLOW_ORIGIN || "https://odia.dev";
+﻿const { setCors, handleOptions, jsonResponse, withRetry } = require("../lib/utils");
+
 const TTS_URL = process.env.ODIA_TTS_BASE_URL || "https://odiadev-tts-plug-n-play.onrender.com/speak";
 const TIMEOUT_MS = 30000;
-
-function setCors(res) {
-  res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
-  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,x-api-key");
-  res.setHeader("Vary", "Origin");
-}
 
 async function readJsonBody(req) {
   const chunks = [];
@@ -23,45 +17,48 @@ async function readJsonBody(req) {
 }
 
 module.exports = async (req, res) => {
-  setCors(res);
-
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
+  if (handleOptions(req, res)) return;
 
   if (req.method !== "POST") {
-    res.setHeader("Content-Type", "application/json");
-    return res.status(405).json({ error: "Method not allowed" });
+    return jsonResponse(res, 405, { error: "Method not allowed" });
   }
 
   try {
     const body = await readJsonBody(req);
 
     if (!body.text || typeof body.text !== "string" || body.text.trim().length === 0) {
-      res.setHeader("Content-Type", "application/json");
-      return res.status(400).json({ error: "text field is required" });
+      return jsonResponse(res, 400, { error: "text field is required" });
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const ttsCall = async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    const response = await fetch(TTS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        text: body.text.slice(0, 500),
-        voice: body.voice || "nigerian-female"
-      }),
-      signal: controller.signal
-    });
+      try {
+        const response = await fetch(TTS_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            text: body.text.slice(0, 500),
+            voice: body.voice || "nigerian-female"
+          }),
+          signal: controller.signal
+        });
 
-    clearTimeout(timeout);
+        clearTimeout(timeout);
+        return response;
+      } catch (error) {
+        clearTimeout(timeout);
+        throw error;
+      }
+    };
+
+    const response = await withRetry(ttsCall);
 
     if (!response.ok) {
-      res.setHeader("Content-Type", "application/json");
-      return res.status(502).json({
+      return jsonResponse(res, 502, {
         error: "TTS service unavailable",
         status: response.status
       });
@@ -70,6 +67,7 @@ module.exports = async (req, res) => {
     const audioBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(audioBuffer);
 
+    setCors(res);
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Content-Length", buffer.length.toString());
     res.setHeader("Cache-Control", "no-cache");
@@ -78,12 +76,11 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error("TTS Error:", error.message);
-    res.setHeader("Content-Type", "application/json");
-
+    
     if (error.name === "AbortError") {
-      return res.status(408).json({ error: "Request timeout" });
+      return jsonResponse(res, 408, { error: "Request timeout" });
     }
 
-    return res.status(500).json({ error: "Internal server error" });
+    return jsonResponse(res, 500, { error: "Internal server error" });
   }
 };
