@@ -9,5 +9,8 @@
     "deploy": "vercel --prod",
     "test": "node --test"
   },
-  "dependencies": {}
+  "dependencies": {
+    "winston": "^3.17.0",
+    "zod": "^3.25.76"
+  }
 }
