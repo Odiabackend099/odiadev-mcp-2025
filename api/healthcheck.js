@@ -1,4 +1,4 @@
-﻿const { setCors, handleOptions, jsonResponse } = require("../lib/utils");
+﻿﻿const { setCors, handleOptions, jsonResponse } = require("../lib/utils");
 
 module.exports = async (req, res) => {
   if (handleOptions(req, res)) return;
@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
       ttsConfigured: Boolean(process.env.ODIA_TTS_BASE_URL),
       flutterwaveConfigured: Boolean(process.env.FLW_SECRET_KEY && process.env.FLW_WEBHOOK_SECRET_HASH),
       apiKeysConfigured: Boolean(process.env.VALID_API_KEYS),
-      corsOrigin: process.env.CORS_ALLOW_ORIGIN || "https://odia.dev"
+      corsOrigin: process.env.CORS_ALLOW_ORIGIN || "https://mcp.odia.dev"
     },
     mcp: {
       protocol: "2024-11-05",
