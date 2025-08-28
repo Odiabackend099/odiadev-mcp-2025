@@ -1,7 +1,7 @@
-﻿const { setCors, handleOptions, jsonResponse, readJsonBody, safeLog } = require("../../lib/utils");
+const { setCors, handleOptions, jsonResponse, readJsonBody, safeLog } = require("../../lib/utils");
 
 const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY || "";
-const WEBHOOK_HASH = process.env.FLW_WEBHOOK_SECRET_HASH || "";
+const WEBHOOK_HASH = process.env.FLW_WEBHOOK_SECRET_HASH || process.env.FLUTTERWAVE_WEBHOOK_SECRET || "";
 
 module.exports = async (req, res) => {
   if (handleOptions(req, res)) return;
@@ -139,3 +139,4 @@ async function processGenericWebhook(eventData, eventType) {
 function generateWebhookId() {
   return `wh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
+
