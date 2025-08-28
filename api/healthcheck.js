@@ -1,3 +1,4 @@
+﻿export const config = { runtime: 'nodejs', maxDuration: 10 };
 const ALLOWED_ORIGIN = process.env.CORS_ALLOW_ORIGIN || "https://odia.dev";
 function setCors(res) {
   res.setHeader("Vary", "Origin");
