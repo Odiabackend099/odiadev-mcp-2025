@@ -1,7 +1,7 @@
-﻿const { setCors, handleOptions, jsonResponse, readJsonBody, withRetry, safeLog } = require("../../lib/utils");
+const { setCors, handleOptions, jsonResponse, readJsonBody, withRetry, safeLog } = require("../../lib/utils");
 
-const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY || "";
-const FLW_PUBLIC_KEY = process.env.FLW_PUBLIC_KEY || "";
+const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY || process.env.FLUTTERWAVE_SECRET_KEY || "";
+const FLW_PUBLIC_KEY = process.env.FLW_PUBLIC_KEY || process.env.FLUTTERWAVE_PUBLIC_KEY || "";
 
 module.exports = async (req, res) => {
   if (handleOptions(req, res)) return;
@@ -125,3 +125,4 @@ function validatePaymentRequest(body) {
 
   return { valid: true };
 }
+
